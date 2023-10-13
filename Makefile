@@ -18,3 +18,7 @@ ensure-path:
 # go builds are fast enough that we can just build on demand instead of trying to do any fancy
 # change detection
 .PHONY: ensure-path
+
+test:
+> go test ./internal
+.PHONY: test
