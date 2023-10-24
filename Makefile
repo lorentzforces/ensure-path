@@ -10,14 +10,17 @@ ifeq ($(origin .RECIPEPREFIX), undefined)
 endif
 .RECIPEPREFIX = >
 
-build: ensure-path
+# go builds are fast enough that we can just build on demand instead of trying to do any fancy
+# change detection
+build: clean ensure-path
 .PHONY: build
 
 ensure-path:
 > go build ./cmd/ensure-path
-# go builds are fast enough that we can just build on demand instead of trying to do any fancy
-# change detection
-.PHONY: ensure-path
+
+clean:
+> rm -f ./ensure-path
+.PHONY: clean
 
 test:
 > go test ./internal
