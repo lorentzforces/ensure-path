@@ -23,5 +23,5 @@ clean:
 .PHONY: clean
 
 test:
-> go test ./internal
+> go test ./...
 .PHONY: test
