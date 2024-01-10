@@ -12,20 +12,22 @@ import (
 )
 
 func main() {
-	var ensureFirst bool
+	var anyPosition bool
 	flag.BoolVar(
-		&ensureFirst,
-		"first",
+		&anyPosition,
+		"any-position",
 		false,
-		"Verify that the item is FIRST in the path, and add or move to beginning otherwise",
+		"Only verify that the item is present in the path, not necessarily first.",
 	)
-	var useEnvVar bool
+
+	var useStdIn bool
 	flag.BoolVar(
-		&useEnvVar,
-		"from-env",
+		&useStdIn,
+		"stdin",
 		false,
-		"Use the value of the $PATH environment variable as the input",
+		"Use standard input as the input, instead of STDIN",
 	)
+
 	flag.Parse()
 
 	args := flag.Args()
@@ -38,22 +40,21 @@ func main() {
 
 	var pathString string
 	var err error
-	if useEnvVar {
-		pathString = os.Getenv("PATH")
-	} else {
+	if useStdIn {
 		pathString, err = getPathStdIn()
 		if err != nil {
 			failOut(err.Error())
 		}
+	} else {
+		pathString = os.Getenv("PATH")
 	}
 
 	var output string
-	if ensureFirst {
-		output = path_tools.EnsureFirst(entry, pathString)
-	} else {
+	if anyPosition {
 		output = path_tools.EnsureOnce(entry, pathString)
+	} else {
+		output = path_tools.EnsureFirst(entry, pathString)
 	}
-
 
 	fmt.Println(output)
 }
@@ -61,6 +62,7 @@ func main() {
 const maxTotalKilobytes = 10
 const maxTotalBytes = 1024 * maxTotalKilobytes
 
+// Pulls piped standard input in. You can check
 func getPathStdIn() (string, error) {
 	stdIn := bufio.NewReader(os.Stdin)
 	buf := make([]byte, 0, 4*1024)

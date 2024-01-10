@@ -42,6 +42,13 @@ type splitPath struct {
 // incoming entry at the beginning, and the consumer can decide whether to use this new set of
 // entries or to discard it.
 func checkPath(entry, path string) splitPath {
+	if len(path) == 0 {
+		return splitPath{
+			entries: []string{entry},
+			entryIndex: int(-1),
+		}
+	}
+
 	rawEntries := strings.Split(path, delimiter)
 
 	modifiedEntries := make([]string, 0, len(rawEntries) + 1)

@@ -79,3 +79,17 @@ func TestEnsureFirstMovesEntryWhenNotFirst(t *testing.T) {
 		)
 	}
 }
+
+func TestEmptyPathsDontAddDelimiter(t *testing.T) {
+	entry := "path/test"
+	path := ""
+
+	result := EnsureOnce(entry, path)
+
+	if result != entry {
+		t.Errorf(
+			"Expected result to be identical to input (no delimiter).\nResult: %s",
+			result,
+		)
+	}
+}
