@@ -80,20 +80,32 @@ const maxTotalBytes = 1024 * maxTotalKilobytes
 // Pulls in standard input as a string until EOF is encountered. If there is no data in standard
 // input, it will spin indefinitely (turns out piped input is kind of hard).
 func getPathStdIn() (string, error) {
+	// verify STDIN is a pipe
+	fileInfo, err := os.Stdin.Stat()
+	if err != nil {
+		return "", err
+	}
+	if (fileInfo.Mode() & os.ModeCharDevice) != 0 {
+		err := errors.New("STDIN was not a pipe, which is probably not intended.")
+		return "", err
+	}
+
 	stdIn := bufio.NewReader(os.Stdin)
 	buf := make([]byte, 0, 4*1024)
 	var out strings.Builder
 	totalBytes := uint(0)
 
 	for {
+		fmt.Println("lol")
 		n, err := stdIn.Read(buf[:cap(buf)])
 		buf = buf[:n]
 		totalBytes += uint(n)
 
 		if totalBytes > maxTotalBytes {
-			err := errors.New(
+			err := errors.New(fmt.Sprintf(
 				"Standard input contained more than %d kB. This is probably not intended.",
-			)
+				maxTotalKilobytes,
+			))
 			return out.String(), err
 		}
 
@@ -131,6 +143,6 @@ Options:
 }
 
 func failOut(msg string) {
-	fmt.Fprintln(os.Stderr, msg)
+	fmt.Fprintln(os.Stderr, "ERROR: " + msg)
 	os.Exit(1)
 }
