@@ -3,37 +3,52 @@ package main
 import (
 	"bufio"
 	"errors"
-	"flag"
 	"fmt"
 	"io"
 	"os"
 	"strings"
+	"github.com/spf13/pflag"
 	"github.com/lorentzforces/ensure-path/internal/path_tools"
 )
 
 func main() {
 	var anyPosition bool
-	flag.BoolVar(
+	pflag.BoolVar(
 		&anyPosition,
 		"any-position",
 		false,
-		"Only verify that the item is present in the path, not necessarily first.",
+		"Only verify that the item is present in the path, not necessarily first",
 	)
 
 	var useStdIn bool
-	flag.BoolVar(
+	pflag.BoolVar(
 		&useStdIn,
 		"stdin",
 		false,
-		"Use standard input as the input, instead of STDIN",
+		"Use standard input as the input, instead of the $PATH environment variable",
 	)
 
-	flag.Parse()
+	var helpRequested bool
+	pflag.BoolVarP(
+		&helpRequested,
+		"help",
+		"h",
+		false,
+		"Print this help message",
+	)
 
-	args := flag.Args()
+	pflag.Parse()
+
+	if helpRequested {
+		printUsageAndBail()
+		os.Exit(1)
+	}
+
+	args := pflag.Args()
 
 	if len(args) != 1 {
-		failOut(fmt.Sprintf("Expected 1 string arg, but was given %d", len(args)))
+		fmt.Fprintf(os.Stderr, "Expected 1 string arg, but was given %d\n\n", len(args))
+		printUsageAndBail()
 	}
 
 	entry := args[0]
@@ -62,7 +77,8 @@ func main() {
 const maxTotalKilobytes = 10
 const maxTotalBytes = 1024 * maxTotalKilobytes
 
-// Pulls piped standard input in. You can check
+// Pulls in standard input as a string until EOF is encountered. If there is no data in standard
+// input, it will spin indefinitely (turns out piped input is kind of hard).
 func getPathStdIn() (string, error) {
 	stdIn := bufio.NewReader(os.Stdin)
 	buf := make([]byte, 0, 4*1024)
@@ -98,6 +114,20 @@ func getPathStdIn() (string, error) {
 	}
 
 	return out.String(), nil
+}
+
+func printUsageAndBail() {
+	fmt.Fprint(
+		os.Stderr,
+		`Usage of ensure-path:  ensure-path [OPTION]... NEWENTRY
+Reads from the $PATH environment variable, returning that PATH value with NEWENTRY appearing once
+at the beginning of its entries.
+
+Options:
+`,
+	)
+	pflag.PrintDefaults()
+	os.Exit(1)
 }
 
 func failOut(msg string) {
