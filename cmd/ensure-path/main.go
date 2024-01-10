@@ -40,7 +40,7 @@ func main() {
 	pflag.Parse()
 
 	if helpRequested {
-		printUsageAndBail()
+		printUsage()
 		os.Exit(1)
 	}
 
@@ -48,7 +48,8 @@ func main() {
 
 	if len(args) != 1 {
 		fmt.Fprintf(os.Stderr, "Expected 1 string arg, but was given %d\n\n", len(args))
-		printUsageAndBail()
+		printUsage()
+		os.Exit(1)
 	}
 
 	entry := args[0]
@@ -78,9 +79,9 @@ const maxTotalKilobytes = 10
 const maxTotalBytes = 1024 * maxTotalKilobytes
 
 // Pulls in standard input as a string until EOF is encountered. If there is no data in standard
-// input, it will spin indefinitely (turns out piped input is kind of hard).
+// input, it will spin indefinitely (turns out piped input is kind of hard). We at least check to
+// make sure STDIN is a pipe and not accidentally the terminal.
 func getPathStdIn() (string, error) {
-	// verify STDIN is a pipe
 	fileInfo, err := os.Stdin.Stat()
 	if err != nil {
 		return "", err
@@ -128,7 +129,7 @@ func getPathStdIn() (string, error) {
 	return out.String(), nil
 }
 
-func printUsageAndBail() {
+func printUsage() {
 	fmt.Fprint(
 		os.Stderr,
 		`Usage of ensure-path:  ensure-path [OPTION]... NEWENTRY
@@ -139,7 +140,6 @@ Options:
 `,
 	)
 	pflag.PrintDefaults()
-	os.Exit(1)
 }
 
 func failOut(msg string) {
