@@ -97,7 +97,6 @@ func getPathStdIn() (string, error) {
 	totalBytes := uint(0)
 
 	for {
-		fmt.Println("lol")
 		n, err := stdIn.Read(buf[:cap(buf)])
 		buf = buf[:n]
 		totalBytes += uint(n)
