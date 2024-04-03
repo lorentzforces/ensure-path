@@ -6,7 +6,7 @@
 
 ### Requirements:
 
-- a Golang installation (built & tested on Go v1.19)
+- a Golang installation (built & tested on Go v1.22)
 - an internet connection to download dependencies (only necessary if dependencies have changed or this is the first build)
 - to use the provided `Makefile`, a `make` installation which supports `.RECIPEPREFIX` (_e.g._ GNU Make >=4.0)
 
