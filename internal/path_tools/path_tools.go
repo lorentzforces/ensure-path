@@ -8,7 +8,14 @@ import (
 
 const delimiter string = ":"
 
-func EnsureOnce(entry, path string) string {
+func EnsureOnce(entry, path string, removeEmpty bool) string {
+	if len(path) == 0 && removeEmpty {
+		return entry
+	}
+	if len(path) == 0 && !removeEmpty {
+		return entry + ":"
+	}
+
 	pathEntries := checkPath(entry, path)
 
 	if pathEntries.isEmpty() {
@@ -18,10 +25,21 @@ func EnsureOnce(entry, path string) string {
 		return path
 	}
 
+	if removeEmpty {
+		pathEntries.removeEmptyEntries()
+	}
+
 	return strings.Join(pathEntries.entries, delimiter)
 }
 
-func EnsureFirst(entry, path string) string {
+func EnsureFirst(entry, path string, removeEmpty bool) string {
+	if len(path) == 0 && removeEmpty {
+		return entry
+	}
+	if len(path) == 0 && !removeEmpty {
+		return entry + ":"
+	}
+
 	pathEntries := checkPath(entry, path)
 
 	if pathEntries.isEmpty() {
@@ -29,6 +47,10 @@ func EnsureFirst(entry, path string) string {
 	}
 	if pathEntries.entryFirst() {
 		return path
+	}
+
+	if removeEmpty {
+		pathEntries.removeEmptyEntries()
 	}
 
 	return strings.Join(pathEntries.entries, delimiter)
@@ -44,27 +66,14 @@ const stringNotPresent int = -1
 // Parses the provided path, splitting it into its component entries. It will record if and where
 // the incoming entry was seen. Regardless, the returned struct will be modified to add the
 // incoming entry at the beginning, and the consumer can decide whether to use this new set of
-// entries or to discard it. Whitespace-only entries will be discarded (as far as I know, the only
-// reason a whitespace-only entry would appear in a PATH string is an error).
+// entries or to discard it.
 func checkPath(entry, path string) splitPath {
-	if len(path) == 0 {
-		return splitPath{
-			entries: []string{entry},
-			entryIndex: int(-1),
-		}
-	}
-
 	rawEntries := strings.Split(path, delimiter)
 
 	modifiedEntries := make([]string, 0, len(rawEntries) + 1)
 	entryIndex := int(-1)
 	modifiedEntries = append(modifiedEntries, entry)
 	for i, existing := range rawEntries {
-		whitespaceOnly, _ := regexp.MatchString("\\s", existing)
-		if (whitespaceOnly) {
-			continue
-		}
-
 		if existing == entry && entryIndex == stringNotPresent {
 			entryIndex = i
 		} else {
@@ -88,6 +97,18 @@ func (sp splitPath) entryPresent() bool {
 
 func (sp splitPath) entryFirst() bool {
 	return sp.entryIndex == 0
+}
+
+func (sp *splitPath) removeEmptyEntries() {
+	newEntries := make([]string, 0, len(sp.entries))
+	for _, existing := range sp.entries {
+		whitespaceOnly, _ := regexp.MatchString("\\s", existing)
+		if whitespaceOnly || len(existing) == 0 {
+			continue
+		}
+		newEntries = append(newEntries, existing)
+	}
+	sp.entries = newEntries
 }
 
 func (sp splitPath) printDebug() string {

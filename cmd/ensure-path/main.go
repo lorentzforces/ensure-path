@@ -37,6 +37,15 @@ func main() {
 		"Print this help message",
 	)
 
+	var keepEmpty bool
+	pflag.BoolVarP(
+		&keepEmpty,
+		"keep-empty",
+		"e",
+		false,
+		"Keep empty items in the input",
+	)
+
 	pflag.Parse()
 
 	if helpRequested {
@@ -67,9 +76,9 @@ func main() {
 
 	var output string
 	if anyPosition {
-		output = path_tools.EnsureOnce(entry, pathString)
+		output = path_tools.EnsureOnce(entry, pathString, !keepEmpty)
 	} else {
-		output = path_tools.EnsureFirst(entry, pathString)
+		output = path_tools.EnsureFirst(entry, pathString, !keepEmpty)
 	}
 
 	fmt.Println(output)
