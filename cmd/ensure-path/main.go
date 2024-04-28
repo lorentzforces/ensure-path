@@ -46,6 +46,15 @@ func main() {
 		"Keep empty items in the input",
 	)
 
+	var deleteEntry string
+	pflag.StringVarP(
+		&deleteEntry,
+		"delete",
+		"d",
+		"",
+		"Delete items containing the provided string",
+	)
+
 	pflag.Parse()
 
 	if helpRequested {
@@ -74,13 +83,16 @@ func main() {
 		pathString = os.Getenv("PATH")
 	}
 
-	var output string
-	if anyPosition {
-		output = path_tools.EnsureOnce(entry, pathString, !keepEmpty)
-	} else {
-		output = path_tools.EnsureFirst(entry, pathString, !keepEmpty)
+	params := path_tools.EnsureParams{
+		IncomingEntry: entry,
+		Path: pathString,
+		EnsureFirst: !anyPosition,
+		RemoveEmpty: !keepEmpty,
+		RemoveMatches: len(deleteEntry) > 0,
+		MatchSeq: deleteEntry,
 	}
 
+	output := path_tools.EnsurePath(params)
 	fmt.Println(output)
 }
 
@@ -111,10 +123,10 @@ func getPathStdIn() (string, error) {
 		totalBytes += uint(n)
 
 		if totalBytes > maxTotalBytes {
-			err := errors.New(fmt.Sprintf(
+			err := fmt.Errorf(
 				"Standard input contained more than %d kB. This is probably not intended.",
 				maxTotalKilobytes,
-			))
+			)
 			return out.String(), err
 		}
 

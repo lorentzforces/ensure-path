@@ -1,122 +1,88 @@
 package path_tools
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 )
 
 const delimiter string = ":"
 
-func EnsureOnce(entry, path string, removeEmpty bool) string {
-	if len(path) == 0 && removeEmpty {
-		return entry
-	}
-	if len(path) == 0 && !removeEmpty {
-		return entry + ":"
-	}
-
-	pathEntries := checkPath(entry, path)
-
-	if pathEntries.isEmpty() {
-		return entry
-	}
-	if pathEntries.entryPresent() {
-		return path
-	}
-
-	if removeEmpty {
-		pathEntries.removeEmptyEntries()
-	}
-
-	return strings.Join(pathEntries.entries, delimiter)
+type EnsureParams struct {
+	IncomingEntry string
+	Path string
+	EnsureFirst bool
+	RemoveEmpty bool
+	RemoveMatches bool
+	MatchSeq string
 }
 
-func EnsureFirst(entry, path string, removeEmpty bool) string {
-	if len(path) == 0 && removeEmpty {
-		return entry
+func EnsurePath(params EnsureParams) string {
+	entries := strings.Split(params.Path, delimiter)
+
+	filters := make([]filterFunc, 0, 3)
+	if params.RemoveEmpty {
+		filters = append(filters, filterEmpty)
 	}
-	if len(path) == 0 && !removeEmpty {
-		return entry + ":"
+	if params.RemoveMatches {
+		filters = append(filters, filterByString(params.MatchSeq))
 	}
-
-	pathEntries := checkPath(entry, path)
-
-	if pathEntries.isEmpty() {
-		return entry
+	if params.EnsureFirst {
+		filters = append(filters, filterByString(params.IncomingEntry))
 	}
-	if pathEntries.entryFirst() {
-		return path
-	}
+	entries = filterEntries(entries, filters)
 
-	if removeEmpty {
-		pathEntries.removeEmptyEntries()
-	}
-
-	return strings.Join(pathEntries.entries, delimiter)
-}
-
-type splitPath struct {
-	entries []string
-	entryIndex int
-}
-
-const stringNotPresent int = -1
-
-// Parses the provided path, splitting it into its component entries. It will record if and where
-// the incoming entry was seen. Regardless, the returned struct will be modified to add the
-// incoming entry at the beginning, and the consumer can decide whether to use this new set of
-// entries or to discard it.
-func checkPath(entry, path string) splitPath {
-	rawEntries := strings.Split(path, delimiter)
-
-	modifiedEntries := make([]string, 0, len(rawEntries) + 1)
-	entryIndex := int(-1)
-	modifiedEntries = append(modifiedEntries, entry)
-	for i, existing := range rawEntries {
-		if existing == entry && entryIndex == stringNotPresent {
-			entryIndex = i
-		} else {
-			modifiedEntries = append(modifiedEntries, existing)
+	entryFound := false
+	for _, entry := range entries {
+		if entry == params.IncomingEntry {
+			entryFound = true
 		}
 	}
 
-	return splitPath{
-		entries: modifiedEntries,
-		entryIndex: entryIndex,
+	if !entryFound {
+		freshSlice := make([]string, 0, len(entries) + 1)
+		freshSlice = append(freshSlice, params.IncomingEntry)
+		freshSlice = append(freshSlice, entries...)
+		entries = freshSlice
 	}
+
+	return strings.Join(entries, delimiter)
 }
 
-func (sp splitPath) isEmpty() bool {
-	return len(sp.entries) == 1 && sp.entries[0] == ""
-}
+func filterEntries(entries []string, filters []filterFunc) []string {
+	if len(filters) == 0 {
+		return entries
+	}
 
-func (sp splitPath) entryPresent() bool {
-	return sp.entryIndex > -1
-}
+	results := make([]string, 0, len(entries))
 
-func (sp splitPath) entryFirst() bool {
-	return sp.entryIndex == 0
-}
-
-func (sp *splitPath) removeEmptyEntries() {
-	newEntries := make([]string, 0, len(sp.entries))
-	for _, existing := range sp.entries {
-		whitespaceOnly, _ := regexp.MatchString("\\s", existing)
-		if whitespaceOnly || len(existing) == 0 {
-			continue
+	for _, entry := range entries {
+		kept := true
+		for _, filter := range filters {
+			if !filter(entry) {
+				kept = false
+			}
 		}
-		newEntries = append(newEntries, existing)
+
+		if kept {
+			results = append(results, entry)
+		}
 	}
-	sp.entries = newEntries
+
+
+	return results
 }
 
-func (sp splitPath) printDebug() string {
-	var debugStr strings.Builder;
-	debugStr.WriteString("[\n")
-	for _, entry := range sp.entries {
-		debugStr.WriteString(fmt.Sprintf("  \"%s\",\n", entry))
+// return true to keep entry in input list, false to remove
+type filterFunc func(entry string) bool
+
+func filterEmpty(entry string) bool {
+	isWhitespace, _ := regexp.MatchString(`^\s*$`, entry)
+
+	return !isWhitespace
+}
+
+func filterByString(subStr string) filterFunc {
+	return func(entry string) bool {
+		return !strings.Contains(entry, subStr)
 	}
-	debugStr.WriteString("]\n")
-	return debugStr.String()
 }
