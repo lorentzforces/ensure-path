@@ -24,7 +24,7 @@ func EnsurePath(params EnsureParams) string {
 		filters = append(filters, filterEmpty)
 	}
 	if params.RemoveMatches {
-		filters = append(filters, filterByString(params.MatchSeq))
+		filters = append(filters, filterBySubstring(params.MatchSeq))
 	}
 	if params.EnsureFirst {
 		filters = append(filters, filterByString(params.IncomingEntry))
@@ -81,8 +81,14 @@ func filterEmpty(entry string) bool {
 	return !isWhitespace
 }
 
-func filterByString(subStr string) filterFunc {
+func filterBySubstring(subStr string) filterFunc {
 	return func(entry string) bool {
 		return !strings.Contains(entry, subStr)
+	}
+}
+
+func filterByString(str string) filterFunc {
+	return func(entry string) bool {
+		return str != entry
 	}
 }
