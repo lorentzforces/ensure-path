@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 	"strings"
-	"github.com/spf13/pflag"
+
 	"github.com/lorentzforces/ensure-path/internal/path_tools"
+	"github.com/spf13/pflag"
 )
 
 func main() {
@@ -81,6 +83,14 @@ func main() {
 		}
 	} else {
 		pathString = os.Getenv("PATH")
+	}
+
+	inputEmpty, _ := regexp.MatchString(`^\s*$`, entry)
+	if !keepEmpty && inputEmpty {
+		failOut(
+			"Provided item was empty, but the option to keep empty entries was not passed. If " +
+			"this is intentional, pass the --keep-empty option.",
+		)
 	}
 
 	params := path_tools.EnsureParams{
