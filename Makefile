@@ -4,6 +4,7 @@ SHELL := bash
 .DELETE_ON_ERROR:
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
+.SILENT:
 
 # go builds are fast enough that we can just build on demand instead of trying to do any fancy
 # change detection
