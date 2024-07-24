@@ -5,23 +5,18 @@ SHELL := bash
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 
-ifeq ($(origin .RECIPEPREFIX), undefined)
-  $(error This Make does not support .RECIPEPREFIX. Please use GNU Make 4.0 or later)
-endif
-.RECIPEPREFIX = >
-
 # go builds are fast enough that we can just build on demand instead of trying to do any fancy
 # change detection
 build: clean ensure-path
 .PHONY: build
 
 ensure-path:
-> go build ./cmd/ensure-path
+	go build ./cmd/ensure-path
 
 clean:
-> rm -f ./ensure-path
+	rm -f ./ensure-path
 .PHONY: clean
 
 test:
-> go test ./...
+	go test ./...
 .PHONY: test
