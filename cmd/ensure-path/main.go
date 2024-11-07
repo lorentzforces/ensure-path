@@ -54,7 +54,8 @@ func main() {
 		"delete",
 		"d",
 		"",
-		"Delete items containing the provided string",
+		"Delete items containing the provided string. If a deletion value is passed, you may " +
+			"omit passing a main argument for NEWENTRY.",
 	)
 
 	pflag.Parse()
@@ -66,13 +67,6 @@ func main() {
 
 	args := pflag.Args()
 
-	if len(args) != 1 {
-		fmt.Fprintf(os.Stderr, "Expected 1 string arg, but was given %d\n\n", len(args))
-		printUsage()
-		os.Exit(1)
-	}
-
-	entry := args[0]
 
 	var pathString string
 	var err error
@@ -85,8 +79,21 @@ func main() {
 		pathString = os.Getenv("PATH")
 	}
 
+	removeMatches := len(deleteEntry) > 0
+
+	if len(args) < 1 && !removeMatches {
+		fmt.Fprintf(os.Stderr, "Expected 1 string arg, but was given %d\n\n", len(args))
+		printUsage()
+		os.Exit(1)
+	}
+
+	entry := ""
+	if len(args) == 1 {
+		entry = args[0]
+	}
+
 	inputEmpty, _ := regexp.MatchString(`^\s*$`, entry)
-	if !keepEmpty && inputEmpty {
+	if !keepEmpty && inputEmpty && !removeMatches {
 		failOut(
 			"Provided item was empty, but the option to keep empty entries was not passed. If " +
 			"this is intentional, pass the --keep-empty option.",
@@ -165,6 +172,9 @@ func printUsage() {
 		`Usage of ensure-path:  ensure-path [OPTION]... NEWENTRY
 Reads from the $PATH environment variable, returning that PATH value with NEWENTRY appearing once
 at the beginning of its entries.
+
+NOTE: If the "-d" option is given a value, you may omit passing a value for NEWENTRY to delete
+the value for deletion without adding any entries.
 
 Options:
 `,

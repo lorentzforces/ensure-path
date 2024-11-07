@@ -204,3 +204,24 @@ func TestCanAddEntryThatMatchesDeleted(t *testing.T) {
 		)
 	}
 }
+
+func TestDeleteWithEmptyEntryJustDeletes(t *testing.T) {
+	params := EnsureParams{
+		IncomingEntry: "",
+		Path: "path/test:path/deleteme:path/someDir",
+		RemoveMatches: true,
+		RemoveEmpty: true,
+		MatchSeq: "deleteme",
+	}
+
+	result := EnsurePath(params)
+
+	expectedResult := "path/test:path/someDir"
+	if result != expectedResult {
+		t.Errorf(
+			"Expected result to have removed path containing \"%s\". Result: %s",
+			params.MatchSeq,
+			result,
+		)
+	}
+}

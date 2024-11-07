@@ -38,7 +38,7 @@ func EnsurePath(params EnsureParams) string {
 		}
 	}
 
-	if !entryFound {
+	if !entryFound && (len(params.IncomingEntry) > 0 || !params.RemoveEmpty) {
 		freshSlice := make([]string, 0, len(entries) + 1)
 		freshSlice = append(freshSlice, params.IncomingEntry)
 		freshSlice = append(freshSlice, entries...)
